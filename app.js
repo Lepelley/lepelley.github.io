@@ -94,5 +94,5 @@ const rounded = (value) => {
 const toTime = (value) => {
   const minutes = Math.trunc(value)
   const seconds = Math.trunc(60 * (value - minutes))
-  return (minutes > 9 ? minutes : '0' + minutes) + ':' + seconds
+  return (minutes > 9 ? minutes : '0' + minutes) + ':' + (seconds > 9 ? seconds : '0' + seconds)
 }
