@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelector('#input-vma').addEventListener('change', (event) => {
+  document.querySelector('#input-vma').addEventListener('input', (event) => {
     changeSpeed(
       event.target.value,
       document.querySelector('#input-vitesse-1'),
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     )
   })
 
-  document.querySelector('#input-percent-1').addEventListener('change', (event) => {
+  document.querySelector('#input-percent-1').addEventListener('input', (event) => {
     changeSpeed(
       document.querySelector('#input-vma').value,
       document.querySelector('#input-vitesse-1'),
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     )
   })
 
-  document.querySelector('#input-percent-2').addEventListener('change', (event) => {
+  document.querySelector('#input-percent-2').addEventListener('input', (event) => {
     changeSpeed(
       document.querySelector('#input-vma').value,
       document.querySelector('#input-vitesse-2'),
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     )
   })
 
-  document.querySelector('#input-percent-3').addEventListener('change', (event) => {
+  document.querySelector('#input-percent-3').addEventListener('input', (event) => {
     changeSpeed(
       document.querySelector('#input-vma').value,
       document.querySelector('#input-vitesse-3'),
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     )
   })
 
-  document.querySelector('#input-percent-4').addEventListener('change', (event) => {
+  document.querySelector('#input-percent-4').addEventListener('input', (event) => {
     changeSpeed(
       document.querySelector('#input-vma').value,
       document.querySelector('#input-vitesse-4'),
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     )
   })
 
-  document.querySelector('#input-percent-5').addEventListener('change', (event) => {
+  document.querySelector('#input-percent-5').addEventListener('input', (event) => {
     changeSpeed(
       document.querySelector('#input-vma').value,
       document.querySelector('#input-vitesse-5'),
