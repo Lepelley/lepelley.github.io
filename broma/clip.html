@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Broma'Shuffle</title>
+    <style>
+        body {
+            background: url("Background.png") center center fixed;
+            text-align: center;
+            font-family: "Azo Sans", "Trebuchet MS", serif;
+        }
+    </style>
+    <script src="script.js"></script>
+    <script defer>
+      document.addEventListener('DOMContentLoaded', async () => {
+        const url = new URL(window.location.href)
+        const data = await getData()
+        let selectedData = null
+        let index = 0
+
+        while (selectedData === null || data.length > index) {
+          const testData = data[index]
+          if (testData[5].search(url.searchParams.get('clip')) !== -1) {
+            selectedData = testData
+          }
+          index++
+        }
+
+        setClipFromArray(selectedData)
+        changeTitleFromArray(selectedData)
+      })
+    </script>
+</head>
+<body>
+
+<h1>BromatiquesTV</h1>
+
+<p>
+    <a href="index.html">Random</a>
+    <a href="streamers.html">Streamers</a>
+    <a href="https://twitch.tv/bromatiquestv" target="_blank">Stream</a>
+</p>
+
+
+<h2></h2>
+<iframe id="js-player" src="https://clips.twitch.tv/embed?clip=&parent=lepelley.github.io"
+        frameborder="0" allowfullscreen="true" scrolling="no" height="378" width="620"></iframe>
+
+<p>
+    <button onclick="history.go(-2)">Page précédente</button>
+</p>
+
+</body>
+</html>

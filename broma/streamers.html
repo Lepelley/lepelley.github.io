@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Broma'Shuffle</title>
+    <style>
+        body {
+            background: url("Background.png") center center fixed;
+            text-align: center;
+            font-family: "Azo Sans", "Trebuchet MS", serif;
+        }
+
+        .clip-list-item {
+            display: inline-block;
+            margin: 10px;
+        }
+    </style>
+    <script src="script.js" defer></script>
+    <script defer>
+      document.addEventListener('DOMContentLoaded', async () => {
+        const url = new URL(window.location.href)
+        const data = await getData()
+        const selectedData = []
+        let index = 0
+
+        if (url.searchParams.get('s') === null) {
+          url.searchParams.set('s', 'Ozinor')
+        }
+
+        while (data.length > index) {
+          if (data[index][1].search(url.searchParams.get('s')) !== -1) {
+            selectedData.push(data[index])
+          }
+          index++
+        }
+
+        document.querySelector('h3').innerText = `${url.searchParams.get('s') === null ? 'Ozinor' : url.searchParams.get('s')}`
+
+        listClipsFromStreamer(selectedData)
+      })
+    </script>
+</head>
+<body>
+
+<h1>BromatiquesTV</h1>
+
+<p>
+    <a href="index.html">Random</a>
+    <a href="streamers.html">Streamers</a>
+    <a href="https://twitch.tv/bromatiquestv" target="_blank">Stream</a>
+</p>
+
+
+<h2>Liste des streamers</h2>
+<p>
+    <a href="?s=Ozinor">Ozinor</a> -
+    <a href="?s=Dray">Dray</a> -
+    <a href="?s=Cray">Cray</a> -
+    <a href="?s=Vador">Vador</a> -
+    <a href="?s=Antali">Antali</a> -
+    <a href="?s=Yumi">Yumi</a> -
+    <a href="?s=Dryloxx">Dryloxx</a> -
+    <a href="?s=Randei">Randei</a> -
+    <a href="?s=Ocelya">Ocelya</a> -
+    <a href="?s=Akimatsu">Akimatsu</a> -
+    <a href="?s=Vincman">Vincman</a> -
+    <a href="?s=Leyzou">Leyzou</a>
+</p>
+
+<h3></h3>
+
+<div id="js-clips"></div>
+
+</body>
+</html>
