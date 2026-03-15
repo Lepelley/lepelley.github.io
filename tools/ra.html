@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>RetroAchievements OBS — Icons Only</title>
+<style>
+  :root {
+    --badge-size: 48px;
+    --gap: 4px;
+    --radius: 6px;
+    --cols: 10;
+    --locked-filter: grayscale(100%) brightness(0.3);
+    --unlocked-border: rgba(255, 215, 70, 0.6);
+    --locked-border: rgba(255, 255, 255, 0.06);
+    --glow: 0 0 10px rgba(255, 215, 70, 0.35);
+    --bg: transparent;
+    --tooltip-bg: rgba(8, 6, 20, 0.95);
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── Config ── */
+  #config-panel {
+    background: rgba(10, 10, 18, 0.97);
+    border: 1px solid rgba(120, 100, 255, 0.3);
+    border-radius: 14px;
+    padding: 24px 28px;
+    max-width: 420px;
+    margin: 40px auto;
+  }
+
+  #config-panel h1 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffd746;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+
+  #config-panel label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #a78bfa;
+    margin: 12px 0 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  #config-panel input, #config-panel select {
+    width: 100%;
+    padding: 9px 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(120,100,255,0.2);
+    border-radius: 7px;
+    color: #fff;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+  }
+  #config-panel input:focus, #config-panel select:focus { border-color: #a78bfa; }
+  #config-panel input::placeholder { color: rgba(255,255,255,0.2); }
+  .hint { font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 3px; }
+
+  #config-panel button {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    padding: 11px;
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    border: none;
+    border-radius: 7px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  #config-panel button:hover {
+    box-shadow: 0 4px 18px rgba(124, 58, 237, 0.4);
+  }
+
+  /* ── Grid ── */
+  #overlay { display: none; }
+  #overlay.active { display: block; padding: var(--gap); }
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), var(--badge-size));
+    gap: var(--gap);
+    width: fit-content;
+  }
+
+  /* ── Badge ── */
+  .badge-wrap {
+    position: relative;
+    width: var(--badge-size);
+    height: var(--badge-size);
+  }
+
+  .badge-wrap img {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius);
+    object-fit: cover;
+    display: block;
+    transition: filter 0.3s, border-color 0.3s, box-shadow 0.3s;
+    border: 2px solid var(--locked-border);
+  }
+
+  .badge-wrap.locked img {
+    filter: var(--locked-filter);
+  }
+
+  .badge-wrap.unlocked img {
+    border-color: var(--unlocked-border);
+    box-shadow: var(--glow);
+  }
+
+  /* ── Tooltip ── */
+  .badge-wrap .tip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--tooltip-bg);
+    border: 1px solid rgba(120,100,255,0.25);
+    border-radius: 8px;
+    padding: 8px 10px;
+    width: max-content;
+    max-width: 220px;
+    z-index: 100;
+    pointer-events: none;
+    backdrop-filter: blur(12px);
+  }
+
+  .badge-wrap:hover .tip { display: block; }
+
+  .tip-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.3;
+  }
+
+  .tip-desc {
+    font-size: 10px;
+    color: rgba(255,255,255,0.45);
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+
+  .tip-pts {
+    font-size: 10px;
+    font-weight: 700;
+    color: #ffd746;
+    margin-top: 3px;
+  }
+
+  .tip-arrow {
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 8px;
+    height: 8px;
+    background: var(--tooltip-bg);
+    border-right: 1px solid rgba(120,100,255,0.25);
+    border-bottom: 1px solid rgba(120,100,255,0.25);
+  }
+
+  /* ── New unlock pop ── */
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .badge-wrap.just-unlocked {
+    animation: popIn 0.45s ease-out;
+  }
+  .badge-wrap.just-unlocked img {
+    box-shadow: 0 0 16px rgba(255, 215, 70, 0.6);
+  }
+
+  /* ── Counter ── */
+  #counter {
+    margin-top: 6px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 215, 70, 0.85);
+    text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+    width: fit-content;
+  }
+
+  /* ── Loading ── */
+  #status {
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+  }
+  .spinner {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border: 2px solid rgba(120,100,255,0.2);
+    border-top-color: #a78bfa;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-bottom: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { color: #f87171; }
+</style>
+</head>
+<body>
+
+<!-- ── CONFIG ── -->
+<div id="config-panel">
+  <h1>🏆 RA Overlay — Icônes seules</h1>
+
+  <label>Nom d'utilisateur RA</label>
+  <input type="text" id="cfg-user" placeholder="Pseudo">
+
+  <label>Clé API Web</label>
+  <input type="password" id="cfg-apikey" placeholder="Clé API">
+
+  <label>ID du jeu / subset</label>
+  <input type="text" id="cfg-gameid" placeholder="14402">
+
+  <label>Taille des icônes (px)</label>
+  <input type="number" id="cfg-size" value="48" min="24" max="128">
+
+  <label>Colonnes</label>
+  <input type="number" id="cfg-cols" value="10" min="1" max="30">
+
+  <label>Tri</label>
+  <select id="cfg-sort">
+    <option value="default">Ordre par défaut</option>
+    <option value="unlocked-first">Débloqués en premier</option>
+    <option value="locked-first">Non débloqués en premier</option>
+    <option value="points-desc">Points décroissant</option>
+  </select>
+
+  <label>Afficher le compteur</label>
+  <select id="cfg-counter">
+    <option value="yes">Oui</option>
+    <option value="no">Non</option>
+  </select>
+
+  <label>Rafraîchissement (sec)</label>
+  <input type="number" id="cfg-refresh" value="60" min="15" max="600">
+
+  <button onclick="startOverlay()">Lancer ▶</button>
+</div>
+
+<!-- ── OVERLAY ── -->
+<div id="overlay">
+  <div id="status"><div class="spinner"></div><br>Chargement…</div>
+  <div id="grid"></div>
+  <div id="counter"></div>
+</div>
+
+<script>
+/*
+  URL PARAMS (pour OBS, sans panneau) :
+  ?user=XX&apikey=XX&gameid=14402&size=48&cols=10&sort=default&counter=yes&refresh=60
+*/
+
+const urlP = new URLSearchParams(window.location.search);
+
+let C = {
+  user:    urlP.get('user') || '',
+  apikey:  urlP.get('apikey') || '',
+  gameId:  urlP.get('gameid') || '',
+  size:    parseInt(urlP.get('size') || '48', 10),
+  cols:    parseInt(urlP.get('cols') || '10', 10),
+  sort:    urlP.get('sort') || 'default',
+  counter: (urlP.get('counter') || 'yes') !== 'no',
+  refresh: Math.max(15, parseInt(urlP.get('refresh') || '60', 10)),
+};
+
+const RA = 'https://retroachievements.org';
+const MEDIA = 'https://media.retroachievements.org';
+
+let prevUnlocked = new Set();
+let timer = null;
+
+if (C.user && C.apikey && C.gameId) {
+  applyCSS();
+  document.getElementById('config-panel').style.display = 'none';
+  document.getElementById('overlay').classList.add('active');
+  fetchData();
+  timer = setInterval(fetchData, C.refresh * 1000);
+}
+
+function startOverlay() {
+  C.user    = document.getElementById('cfg-user').value.trim();
+  C.apikey  = document.getElementById('cfg-apikey').value.trim();
+  C.gameId  = document.getElementById('cfg-gameid').value.trim();
+  C.size    = Math.max(24, parseInt(document.getElementById('cfg-size').value, 10) || 48);
+  C.cols    = Math.max(1, parseInt(document.getElementById('cfg-cols').value, 10) || 10);
+  C.sort    = document.getElementById('cfg-sort').value;
+  C.counter = document.getElementById('cfg-counter').value === 'yes';
+  C.refresh = Math.max(15, parseInt(document.getElementById('cfg-refresh').value, 10) || 60);
+
+  if (!C.user || !C.apikey || !C.gameId) return alert('Remplis tous les champs.');
+
+  applyCSS();
+  document.getElementById('config-panel').style.display = 'none';
+  document.getElementById('overlay').classList.add('active');
+  fetchData();
+  if (timer) clearInterval(timer);
+  timer = setInterval(fetchData, C.refresh * 1000);
+}
+
+function applyCSS() {
+  const r = document.documentElement.style;
+  r.setProperty('--badge-size', C.size + 'px');
+  r.setProperty('--cols', C.cols);
+}
+
+async function fetchData() {
+  const statusEl = document.getElementById('status');
+  const gridEl   = document.getElementById('grid');
+  const countEl  = document.getElementById('counter');
+
+  try {
+    const url = `${RA}/API/API_GetGameInfoAndUserProgress.php?g=${C.gameId}&u=${C.user}&y=${C.apikey}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    let achs = Object.values(data.Achievements || {});
+    achs = sortAchs(achs, C.sort);
+
+    const total = achs.length;
+    const earned = achs.filter(isEarned).length;
+
+    // Detect new unlocks
+    const curSet = new Set();
+    achs.forEach(a => { if (isEarned(a)) curSet.add(a.ID || a.id); });
+    const newIds = new Set();
+    if (prevUnlocked.size > 0) {
+      curSet.forEach(id => { if (!prevUnlocked.has(id)) newIds.add(id); });
+    }
+    prevUnlocked = curSet;
+
+    // Render
+    statusEl.style.display = 'none';
+    gridEl.innerHTML = '';
+
+    achs.forEach(a => {
+      const id = a.ID || a.id;
+      const unlocked = curSet.has(id);
+      const isNew = newIds.has(id);
+      const badge = a.BadgeName || a.badgeName;
+      const suffix = unlocked ? '' : '_lock';
+      const src = `${MEDIA}/Badge/${badge}${suffix}.png`;
+      const title = a.Title || a.title || '';
+      const desc = a.Description || a.description || '';
+      const pts = a.Points || a.points || 0;
+
+      const wrap = document.createElement('div');
+      wrap.className = `badge-wrap ${unlocked ? 'unlocked' : 'locked'}${isNew ? ' just-unlocked' : ''}`;
+
+      wrap.innerHTML = `
+        <img src="${src}" alt="" loading="lazy">
+        <div class="tip">
+          <div class="tip-title">${esc(title)}</div>
+          <div class="tip-desc">${esc(desc)}</div>
+          <div class="tip-pts">⭐ ${pts} pts</div>
+          <div class="tip-arrow"></div>
+        </div>
+      `;
+
+      gridEl.appendChild(wrap);
+    });
+
+    // Counter
+    if (C.counter) {
+      countEl.textContent = `${earned} / ${total}`;
+      countEl.style.display = '';
+    } else {
+      countEl.style.display = 'none';
+    }
+
+  } catch (err) {
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = `<span class="error-msg">❌ ${esc(err.message)}</span>`;
+  }
+}
+
+function sortAchs(a, mode) {
+  const order = x => x.DisplayOrder ?? x.displayOrder ?? 0;
+  const pts   = x => x.Points || x.points || 0;
+  switch (mode) {
+    case 'unlocked-first':
+      return a.sort((x, y) => (isEarned(x)?0:1) - (isEarned(y)?0:1) || order(x) - order(y));
+    case 'locked-first':
+      return a.sort((x, y) => (isEarned(x)?1:0) - (isEarned(y)?1:0) || order(x) - order(y));
+    case 'points-desc':
+      return a.sort((x, y) => pts(y) - pts(x));
+    default:
+      return a.sort((x, y) => order(x) - order(y));
+  }
+}
+
+function isEarned(a) {
+  return !!(a.DateEarnedHardcore || a.DateEarned || a.dateEarnedHardcore || a.dateEarned);
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>

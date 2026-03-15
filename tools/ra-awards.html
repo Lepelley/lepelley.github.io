@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RetroAchievements — Site Awards Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a12;
+    --surface: #13131f;
+    --surface-2: #1c1c2e;
+    --border: #2a2a44;
+    --gold: #f0c040;
+    --gold-dim: #b8922e;
+    --cyan: #4de8e0;
+    --magenta: #e84de0;
+    --text: #e0e0f0;
+    --text-dim: #8888aa;
+    --mastery: #ffd700;
+    --beaten: #5090ff;
+    --event: #ff6090;
+    --site-award: #90ff60;
+    --softcore: #aaaacc;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    z-index: 9999;
+  }
+
+  .header {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+    position: relative;
+  }
+
+  .header h1 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.9rem, 3vw, 1.4rem);
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(240,192,64,0.4), 0 2px 0 var(--gold-dim);
+    letter-spacing: 2px;
+    line-height: 1.8;
+  }
+
+  .header p {
+    color: var(--text-dim);
+    margin-top: 0.8rem;
+    font-size: 0.95rem;
+  }
+
+  .setup-panel {
+    max-width: 520px;
+    margin: 0 auto 2rem;
+    padding: 1.5rem 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .field label {
+    display: block;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
+    color: var(--cyan);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  .field input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(240,192,64,0.15);
+  }
+
+  .field input::placeholder { color: var(--text-dim); }
+
+  .btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.65rem;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--gold), #e8a820);
+    color: #1a1a00;
+    box-shadow: 0 4px 15px rgba(240,192,64,0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(240,192,64,0.45);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-download {
+    background: linear-gradient(135deg, var(--cyan), #20c0b8);
+    color: #001a1a;
+    display: none;
+    margin: 1rem auto;
+  }
+
+  .btn-download:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(77,232,224,0.35);
+  }
+
+  /* Status */
+  .status {
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    min-height: 2.5rem;
+  }
+
+  .status.error { color: #ff5060; }
+
+  /* Canvas container */
+  .canvas-wrap {
+    max-width: 1100px;
+    margin: 0 auto 3rem;
+    padding: 0 1rem;
+    text-align: center;
+  }
+
+  .canvas-wrap canvas {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    display: none;
+  }
+
+  /* Loading animation */
+  .loader {
+    display: none;
+    margin: 2rem auto;
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Pixel-art decorative corners */
+  .corner {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    opacity: 0.15;
+  }
+  .corner--tl { top: 12px; left: 12px; border-top: 3px solid var(--gold); border-left: 3px solid var(--gold); }
+  .corner--tr { top: 12px; right: 12px; border-top: 3px solid var(--cyan); border-right: 3px solid var(--cyan); }
+  .corner--bl { bottom: 12px; left: 12px; border-bottom: 3px solid var(--magenta); border-left: 3px solid var(--magenta); }
+  .corner--br { bottom: 12px; right: 12px; border-bottom: 3px solid var(--gold); border-right: 3px solid var(--gold); }
+
+  .footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .options-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .options-row .field { flex: 1; min-width: 140px; }
+
+  select {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  select:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(240,192,64,0.15);
+  }
+
+  .hint {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 0.3rem;
+  }
+
+  .hint a {
+    color: var(--cyan);
+    text-decoration: none;
+  }
+
+  .hint a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="corner corner--tl"></div>
+<div class="corner corner--tr"></div>
+<div class="corner corner--bl"></div>
+<div class="corner corner--br"></div>
+
+<div class="header">
+  <h1>RetroAchievements<br>Site Awards</h1>
+  <p>Génère une image de tes awards pour la partager partout.</p>
+</div>
+
+<div class="setup-panel">
+  <div class="field">
+    <label>Nom d'utilisateur</label>
+    <input type="text" id="username" value="Leyzou" placeholder="Ton pseudo RA">
+  </div>
+  <div class="field">
+    <label>Clé API</label>
+    <input type="password" id="apikey" value="pwuZ9uli7pCu2krCms9SgEh4WjNiDtX5" placeholder="Ta Web API Key">
+    <p class="hint">Disponible sur <a href="https://retroachievements.org/settings" target="_blank">retroachievements.org/settings</a> → section "Keys"</p>
+  </div>
+  <div class="options-row">
+    <div class="field">
+      <label>Filtrer par type</label>
+      <select id="filter">
+        <option value="all">Tous les awards</option>
+        <option value="Mastery/Completion">Mastery uniquement</option>
+        <option value="Game Beaten">Beaten uniquement</option>
+        <option value="event">Events uniquement</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Colonnes</label>
+      <select id="cols">
+        <option value="6">6</option>
+        <option value="8" selected>8</option>
+        <option value="10">10</option>
+        <option value="12">12</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn btn-primary" id="generate" onclick="generate()">Générer l'image</button>
+</div>
+
+<div class="status" id="status"></div>
+<div class="loader" id="loader"></div>
+
+<div class="canvas-wrap">
+  <canvas id="canvas"></canvas>
+  <button class="btn btn-download" id="downloadBtn" onclick="download()">Télécharger l'image</button>
+</div>
+
+<div class="footer">
+  Données fournies par l'API RetroAchievements — Les images appartiennent à leurs propriétaires respectifs.
+</div>
+
+<script>
+const RA_BASE = 'https://retroachievements.org';
+const MEDIA_BASE = 'https://media.retroachievements.org';
+const MEDIA_BASE_ALT = 'https://i.retroachievements.org';
+
+const COLORS = {
+  bg:       '#0f0f1a',
+  surface:  '#181828',
+  border:   '#2a2a44',
+  gold:     '#f0c040',
+  text:     '#e0e0f0',
+  textDim:  '#8888aa',
+  mastery:  '#ffd700',
+  beaten:   '#5090ff',
+  beatenSoft: '#aaaacc',
+  event:    '#ff6090',
+  site:     '#90ff60',
+};
+
+function setStatus(msg, error = false) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status' + (error ? ' error' : '');
+}
+
+function showLoader(show) {
+  document.getElementById('loader').style.display = show ? 'block' : 'none';
+}
+
+async function fetchAwards(username, apiKey) {
+  const url = `${RA_BASE}/API/API_GetUserAwards.php?u=${encodeURIComponent(username)}&y=${encodeURIComponent(apiKey)}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Erreur API: ${resp.status}`);
+  return resp.json();
+}
+
+function loadImage(src) {
+  // Try fetch → blob to avoid CORS tainting the canvas
+  return fetch(src)
+    .then(r => {
+      if (!r.ok) throw new Error('fetch failed');
+      return r.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img load failed')); };
+        img.src = url;
+      });
+    })
+    .catch(() => {
+      // Fallback: load without crossOrigin (canvas will be tainted but at least visible)
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(`Image introuvable: ${src}`));
+        img.src = src;
+      });
+    });
+}
+
+function getAwardColor(award) {
+  if (award.AwardType === 'Mastery/Completion') {
+    return award.AwardDataExtra === 1 ? COLORS.mastery : COLORS.beatenSoft;
+  }
+  if (award.AwardType === 'Game Beaten') {
+    return award.AwardDataExtra === 1 ? COLORS.beaten : COLORS.beatenSoft;
+  }
+  if (award.AwardType?.includes('Event') || award.ConsoleID === 101) return COLORS.event;
+  return COLORS.site;
+}
+
+function getAwardLabel(award) {
+  if (award.AwardType === 'Mastery/Completion') {
+    return award.AwardDataExtra === 1 ? 'MASTERED' : 'COMPLETED';
+  }
+  if (award.AwardType === 'Game Beaten') {
+    return award.AwardDataExtra === 1 ? 'BEATEN' : 'BEATEN (S)';
+  }
+  return award.AwardType?.toUpperCase() || 'AWARD';
+}
+
+function filterAwards(awards, filterValue) {
+  if (filterValue === 'all') {
+    return awards.filter(a =>
+      a.AwardType === 'Mastery/Completion' ||
+      a.AwardType === 'Game Beaten' ||
+      a.ConsoleID === 101
+    );
+  }
+  if (filterValue === 'event') {
+    return awards.filter(a => a.ConsoleID === 101);
+  }
+  return awards.filter(a => a.AwardType === filterValue);
+}
+
+async function generate() {
+  const username = document.getElementById('username').value.trim();
+  const apiKey = document.getElementById('apikey').value.trim();
+  const filterVal = document.getElementById('filter').value;
+  const cols = parseInt(document.getElementById('cols').value);
+
+  if (!username || !apiKey) {
+    setStatus('Renseigne ton nom d\'utilisateur et ta clé API.', true);
+    return;
+  }
+
+  const btn = document.getElementById('generate');
+  btn.disabled = true;
+  showLoader(true);
+  setStatus('Récupération des awards...');
+  document.getElementById('canvas').style.display = 'none';
+  document.getElementById('downloadBtn').style.display = 'none';
+
+  try {
+    const data = await fetchAwards(username, apiKey);
+
+    if (!data.VisibleUserAwards || data.VisibleUserAwards.length === 0) {
+      setStatus('Aucun award trouvé pour cet utilisateur.', true);
+      btn.disabled = false;
+      showLoader(false);
+      return;
+    }
+
+    const awards = filterAwards(data.VisibleUserAwards, filterVal);
+
+    if (awards.length === 0) {
+      setStatus('Aucun award correspond à ce filtre.', true);
+      btn.disabled = false;
+      showLoader(false);
+      return;
+    }
+
+    setStatus(`${awards.length} awards trouvés. Chargement des images...`);
+
+    // Load all game icons (try multiple CDN hosts as fallback)
+    const imagePromises = awards.map(a => {
+      const urls = [
+        `${MEDIA_BASE}${a.ImageIcon}`,
+        `${MEDIA_BASE_ALT}${a.ImageIcon}`,
+        `${RA_BASE}${a.ImageIcon}`,
+      ];
+      return urls.reduce(
+        (chain, url) => chain.catch(() => loadImage(url)),
+        Promise.reject()
+      ).catch(() => null);
+    });
+
+    const images = await Promise.all(imagePromises);
+    const loadedCount = images.filter(Boolean).length;
+
+    setStatus(`Génération de l'image... (${loadedCount}/${awards.length} icônes chargées)`);
+    await renderCanvas(username, data, awards, images, cols);
+
+    setStatus(`Image générée — ${awards.length} awards affichés.`);
+    document.getElementById('canvas').style.display = 'block';
+    document.getElementById('downloadBtn').style.display = 'block';
+
+  } catch (err) {
+    console.error(err);
+    setStatus(`Erreur : ${err.message}`, true);
+  } finally {
+    btn.disabled = false;
+    showLoader(false);
+  }
+}
+
+async function renderCanvas(username, data, awards, images, cols) {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  const ICON   = 64;   // icon size
+  const BORDER = 3;    // colored border thickness
+  const CELL   = ICON + BORDER * 2; // total cell size
+  const GAP    = 6;    // space between cells
+  const PAD    = 12;   // outer padding
+
+  const rows = Math.ceil(awards.length / cols);
+  const W = PAD * 2 + cols * CELL + (cols - 1) * GAP;
+  const H = PAD * 2 + rows * CELL + (rows - 1) * GAP;
+
+  canvas.width = W;
+  canvas.height = H;
+
+  // Dark background
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw each award: colored border → icon filling the inside
+  for (let i = 0; i < awards.length; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = PAD + col * (CELL + GAP);
+    const y = PAD + row * (CELL + GAP);
+    const award = awards[i];
+    const color = getAwardColor(award);
+    const img = images[i];
+
+    // Colored border (full cell rect)
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, CELL, CELL);
+
+    // Inner dark fill
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(x + BORDER, y + BORDER, ICON, ICON);
+
+    // Draw icon filling the inner area
+    if (img) {
+      ctx.drawImage(img, x + BORDER, y + BORDER, ICON, ICON);
+    } else {
+      ctx.fillStyle = '#333';
+      ctx.fillRect(x + BORDER, y + BORDER, ICON, ICON);
+    }
+  }
+}
+
+function download() {
+  const canvas = document.getElementById('canvas');
+  const username = document.getElementById('username').value.trim() || 'user';
+  try {
+    const link = document.createElement('a');
+    link.download = `ra-awards-${username}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch (e) {
+    setStatus('Le téléchargement direct est bloqué par le navigateur. Fais clic droit → "Enregistrer l\'image sous..." sur le canvas.', true);
+  }
+}
+</script>
+
+</body>
+</html>
