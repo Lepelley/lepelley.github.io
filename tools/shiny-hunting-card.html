@@ -101,24 +101,29 @@ const PA="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokem
 const SD="https://play.pokemonshowdown.com/sprites";
 
 /* ═══════════════ GAMES — one per individual title ═══════════════ */
-const GAMES=[
-  // Gen 1 — no shiny
-  {id:"vert",label:"Vert (JP)",short:"Vert",color:"#4CAF50",gen:1,px:true,
-    url:(_,n)=>`${SD}/gen1rg/${n}.png`,fb:id=>`${PA}/versions/generation-i/red-blue/${id}.png`},
-  {id:"rouge",label:"Rouge",short:"Rouge",color:"#D03028",gen:1,px:true,
-    url:id=>`${PA}/versions/generation-i/red-blue/${id}.png`,fb:id=>`${PA}/${id}.png`},
-  {id:"bleu",label:"Bleu",short:"Bleu",color:"#3060C0",gen:1,px:true,
-    url:id=>`${PA}/versions/generation-i/red-blue/${id}.png`,fb:id=>`${PA}/${id}.png`},
-  {id:"jaune",label:"Jaune",short:"Jaune",color:"#E8C520",gen:1,px:true,
-    url:id=>`${PA}/versions/generation-i/yellow/${id}.png`,fb:id=>`${PA}/versions/generation-i/red-blue/${id}.png`},
+const DW="https://raw.githubusercontent.com/DewiLet/Sprites/main";
+function dwName(id){const p=PKMN_DB[id-1];return p?`${String(id).padStart(3,'0')}_${p[1]}`:null}
 
-  // Gen 2
+const GAMES=[
+  // Gen 1 — no shiny, transparent sprites
+  {id:"vert",label:"Vert (JP)",short:"Vert",color:"#4CAF50",gen:1,px:true,
+    url:(_,n)=>`${SD}/gen1rg/${n}.png`,fb:id=>`${PA}/versions/generation-i/red-blue/transparent/${id}.png`},
+  {id:"rouge",label:"Rouge",short:"Rouge",color:"#D03028",gen:1,px:true,
+    url:id=>`${PA}/versions/generation-i/red-blue/transparent/${id}.png`,
+    alt:(_,n)=>`${SD}/gen1rb/${n}.png`,fb:id=>`${PA}/versions/generation-i/red-blue/${id}.png`},
+  {id:"bleu",label:"Bleu",short:"Bleu",color:"#3060C0",gen:1,px:true,
+    url:id=>`${PA}/versions/generation-i/red-blue/transparent/${id}.png`,
+    alt:(_,n)=>`${SD}/gen1rb/${n}.png`,fb:id=>`${PA}/versions/generation-i/red-blue/${id}.png`},
+  {id:"jaune",label:"Jaune",short:"Jaune",color:"#E8C520",gen:1,px:true,
+    url:(_,n)=>`${SD}/gen1/${n}.png`,fb:id=>`${PA}/versions/generation-i/yellow/${id}.png`},
+
+  // Gen 2 — shiny, Showdown transparent
   {id:"or",label:"Or",short:"Or",color:"#DAA520",gen:2,px:true,
-    url:id=>`${PA}/versions/generation-ii/gold/shiny/${id}.png`,fb:id=>`${PA}/shiny/${id}.png`},
+    url:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/gold/shiny/${id}.png`},
   {id:"argent",label:"Argent",short:"Argent",color:"#A0A8C0",gen:2,px:true,
-    url:id=>`${PA}/versions/generation-ii/silver/shiny/${id}.png`,fb:id=>`${PA}/versions/generation-ii/gold/shiny/${id}.png`},
+    url:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/silver/shiny/${id}.png`},
   {id:"cristal",label:"Cristal",short:"Cristal",color:"#5EC8E8",gen:2,px:true,
-    url:id=>`${PA}/versions/generation-ii/crystal/shiny/${id}.png`,fb:id=>`${PA}/versions/generation-ii/gold/shiny/${id}.png`},
+    url:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/crystal/shiny/${id}.png`},
 
   // Gen 3
   {id:"rubis",label:"Rubis",short:"Rubis",color:"#A41515",gen:3,px:true,
@@ -132,12 +137,12 @@ const GAMES=[
     url:id=>`${PA}/versions/generation-iii/firered-leafgreen/shiny/${id}.png`,fb:id=>`${PA}/versions/generation-iii/ruby-sapphire/shiny/${id}.png`},
   {id:"vert-feuille",label:"Vert Feuille",short:"Vert Feuille",color:"#40A840",gen:3,px:true,
     url:id=>`${PA}/versions/generation-iii/firered-leafgreen/shiny/${id}.png`,fb:id=>`${PA}/versions/generation-iii/ruby-sapphire/shiny/${id}.png`},
-  {id:"colosseum",label:"Colosseum",short:"Colosseum",color:"#6050A0",gen:3,px:true,
-    url:id=>`${PA}/versions/generation-iii/ruby-sapphire/shiny/${id}.png`,
-    alt:(_,n)=>`${SD}/gen3-shiny/${n}.png`,fb:id=>`${PA}/shiny/${id}.png`},
-  {id:"xd",label:"XD",short:"XD",color:"#483878",gen:3,px:true,
-    url:id=>`${PA}/versions/generation-iii/ruby-sapphire/shiny/${id}.png`,
-    alt:(_,n)=>`${SD}/gen3-shiny/${n}.png`,fb:id=>`${PA}/shiny/${id}.png`},
+  {id:"colosseum",label:"Colosseum",short:"Colosseum",color:"#6050A0",gen:3,px:false,
+    url:id=>{const n=dwName(id);return n?`${DW}/Colosseum%26XD/${encodeURIComponent(n)}.gif`:null},
+    alt:(_,n)=>`${SD}/gen3-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-iii/ruby-sapphire/shiny/${id}.png`},
+  {id:"xd",label:"XD",short:"XD",color:"#483878",gen:3,px:false,
+    url:id=>{const n=dwName(id);return n?`${DW}/Colosseum%26XD/${encodeURIComponent(n)}.gif`:null},
+    alt:(_,n)=>`${SD}/gen3-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-iii/ruby-sapphire/shiny/${id}.png`},
 
   // Gen 4
   {id:"diamant",label:"Diamant",short:"Diamant",color:"#7B68EE",gen:4,px:true,
@@ -267,7 +272,7 @@ async function getNames(pid){
   return{fr:frC[pid],en:enC[pid]};
 }
 function sdn(n){return(n||'').toLowerCase().replace(/[^a-z0-9\-]/g,'')}
-function sUrl(gid,pid,en){const g=GAMES.find(x=>x.id===gid);if(!g)return`${PA}/shiny/${pid}.png`;try{return g.url(pid,sdn(en))}catch{return g.fb(pid)}}
+function sUrl(gid,pid,en){const g=GAMES.find(x=>x.id===gid);if(!g)return`${PA}/shiny/${pid}.png`;try{const u=g.url(pid,sdn(en));return u||g.fb(pid)}catch{return g.fb(pid)}}
 function fbUrl(gid,pid){const g=GAMES.find(x=>x.id===gid);return g?g.fb(pid):`${PA}/shiny/${pid}.png`}
 function altUrl(gid,pid,en){const g=GAMES.find(x=>x.id===gid);if(!g?.alt)return null;try{return g.alt(pid,sdn(en))}catch{return null}}
 
@@ -546,7 +551,7 @@ function App(){
     <div>
       <div className="header">
         <h1>✦ SHINY HUNTING CARD</h1>
-        <p>Sprites : PokeAPI (Gen 1–5) · Showdown 3D (Gen 6–7) · HOME (Gen 8–9)</p>
+        <p>Sprites : PokeAPI · Pokémon Showdown · DewiLet/Sprites</p>
       </div>
 
       <div className="panel">
