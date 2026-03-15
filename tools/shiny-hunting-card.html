@@ -232,7 +232,8 @@ const GENERATIONS=[
   {id:5,label:"Génération V — Unys",range:[494,649],dg:"noir"},
   {id:6,label:"Génération VI — Kalos",range:[650,721],dg:"x"},
   {id:7,label:"Génération VII — Alola",range:[722,809],dg:"soleil"},
-  {id:8,label:"Génération VIII — Galar",range:[810,905],dg:"epee"},
+  {id:8,label:"Génération VIII — Galar",range:[810,898],dg:"epee"},
+  {id:8.1,label:"Génération VIII — Hisui",range:[899,905],dg:"arceus"},
   {id:9,label:"Génération IX — Paldea",range:[906,1025],dg:"ecarlate"},
 ];
 GENERATIONS.forEach(g=>{g.rangeLabel=`${pad4(g.range[0])} – ${pad4(g.range[1])}`});
@@ -243,7 +244,7 @@ const REGIONAL_DEXES=[
   {id:7,name:"Johto (HGSS)",dg:"heartgold"},
   {id:4,name:"Hoenn (RSE)",dg:"emeraude"},
   {id:15,name:"Hoenn (ROSA)",dg:"rubis-omega"},
-  {id:5,name:"Sinnoh (DP)",dg:"diamant"},
+  {id:5,name:"Sinnoh (DP / DEPS)",dg:"diamant"},
   {id:6,name:"Sinnoh (Platine)",dg:"platine"},
   {id:8,name:"Unys (NB)",dg:"noir"},
   {id:9,name:"Unys (N2B2)",dg:"noir2"},
@@ -251,7 +252,16 @@ const REGIONAL_DEXES=[
   {id:13,name:"Kalos Côtes (XY)",dg:"x"},
   {id:14,name:"Kalos Montagnes (XY)",dg:"x"},
   {id:16,name:"Alola (SL)",dg:"soleil"},
-  {id:21,name:"Kanto (LGPE)",dg:"lgp"},
+  {id:17,name:"Mele-Mele (SL)",dg:"soleil"},
+  {id:18,name:"Akala (SL)",dg:"soleil"},
+  {id:19,name:"Ula-Ula (SL)",dg:"soleil"},
+  {id:20,name:"Poni (SL)",dg:"soleil"},
+  {id:21,name:"Alola (USUL)",dg:"ultra-soleil"},
+  {id:22,name:"Mele-Mele (USUL)",dg:"ultra-soleil"},
+  {id:23,name:"Akala (USUL)",dg:"ultra-soleil"},
+  {id:24,name:"Ula-Ula (USUL)",dg:"ultra-soleil"},
+  {id:25,name:"Poni (USUL)",dg:"ultra-soleil"},
+  {id:26,name:"Kanto (LGPE)",dg:"lgp"},
   {id:27,name:"Galar (ÉB)",dg:"epee"},
   {id:28,name:"Isolarmure (ÉB)",dg:"epee"},
   {id:29,name:"Couronneige (ÉB)",dg:"epee"},
@@ -259,6 +269,8 @@ const REGIONAL_DEXES=[
   {id:31,name:"Paldea (ÉV)",dg:"ecarlate"},
   {id:32,name:"Septentria (ÉV DLC)",dg:"ecarlate"},
   {id:33,name:"Institut Myrtille (ÉV DLC)",dg:"ecarlate"},
+  {id:34,name:"Lumiose (LPZA)",dg:"lpza"},
+  {id:35,name:"Hyperespace (LPZA DLC)",dg:"lpza"},
 ];
 
 /* ─── Helpers ─── */
