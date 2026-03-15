@@ -271,7 +271,8 @@ async function getNames(pid){
   }catch{frC[pid]=frC[pid]||`#${pid}`;enC[pid]=enC[pid]||`${pid}`}
   return{fr:frC[pid],en:enC[pid]};
 }
-function sdn(n){return(n||'').toLowerCase().replace(/[^a-z0-9\-]/g,'')}
+const SD_NAMES={"nidoran-f":"nidoranf","nidoran-m":"nidoranm","mr-mime":"mrmime","mime-jr":"mimejr","type-null":"typenull","ho-oh":"hooh","porygon-z":"porygonz","jangmo-o":"jangmoo","hakamo-o":"hakamoo","kommo-o":"kommoo","tapu-koko":"tapukoko","tapu-lele":"tapulele","tapu-bulu":"tapubulu","tapu-fini":"tapufini","chi-yu":"chiyu","chien-pao":"chienpao","ting-lu":"tinglu","wo-chien":"wochien","mr-rime":"mrrime","sirfetchd":"sirfetchd","mr-glaquette":"mrrime","great-tusk":"greattusk","scream-tail":"screamtail","brute-bonnet":"brutebonnet","flutter-mane":"fluttermane","slither-wing":"slitherwing","sandy-shocks":"sandyshocks","iron-treads":"irontreads","iron-bundle":"ironbundle","iron-hands":"ironhands","iron-jugulis":"ironjugulis","iron-moth":"ironmoth","iron-thorns":"ironthorns","roaring-moon":"roaringmoon","iron-valiant":"ironvaliant","walking-wake":"walkingwake","iron-leaves":"ironleaves","gouging-fire":"gougingfire","raging-bolt":"ragingbolt","iron-boulder":"ironboulder","iron-crown":"ironcrown"};
+function sdn(n){const l=(n||'').toLowerCase().replace(/[^a-z0-9\-]/g,'');return SD_NAMES[l]||l.replace(/-/g,'')}
 function sUrl(gid,pid,en){const g=GAMES.find(x=>x.id===gid);if(!g)return`${PA}/shiny/${pid}.png`;try{const u=g.url(pid,sdn(en));return u||g.fb(pid)}catch{return g.fb(pid)}}
 function fbUrl(gid,pid){const g=GAMES.find(x=>x.id===gid);return g?g.fb(pid):`${PA}/shiny/${pid}.png`}
 function altUrl(gid,pid,en){const g=GAMES.find(x=>x.id===gid);if(!g?.alt)return null;try{return g.alt(pid,sdn(en))}catch{return null}}
