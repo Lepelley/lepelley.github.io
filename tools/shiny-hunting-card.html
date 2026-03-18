@@ -106,7 +106,7 @@ function stripAccents(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,''
 function dwName(id){const p=PKMN_DB[id-1];return p?`${String(id).padStart(3,'0')}_${stripAccents(p[1])}`:null}
 
 const GAMES=[
-  // Gen 1 — no shiny, transparent sprites
+  // Gen 1 — no shiny, transparent sprites (PokeAPI transparent for canvas CORS compat)
   {id:"vert",label:"Vert (JP)",short:"Vert",color:"#4CAF50",gen:1,px:true,
     url:(_,n)=>`${SD}/gen1rg/${n}.png`,fb:id=>`${PA}/versions/generation-i/red-blue/transparent/${id}.png`},
   {id:"rouge",label:"Rouge",short:"Rouge",color:"#D03028",gen:1,px:true,
@@ -116,16 +116,19 @@ const GAMES=[
     url:id=>`${PA}/versions/generation-i/red-blue/transparent/${id}.png`,
     alt:(_,n)=>`${SD}/gen1rb/${n}.png`,fb:id=>`${PA}/versions/generation-i/red-blue/${id}.png`},
   {id:"jaune",label:"Jaune",short:"Jaune",color:"#E8C520",gen:1,px:true,
-    url:(_,n)=>`${SD}/gen1/${n}.png`,fb:id=>`${PA}/versions/generation-i/yellow/${id}.png`},
+    url:id=>`${PA}/versions/generation-i/yellow/transparent/${id}.png`,
+    alt:(_,n)=>`${SD}/gen1/${n}.png`,fb:id=>`${PA}/versions/generation-i/yellow/${id}.png`},
 
-  // Gen 2 — shiny, transparent
+  // Gen 2 — shiny, transparent (PokeAPI transparent-shiny for canvas CORS compat)
   {id:"or",label:"Or",short:"Or",color:"#DAA520",gen:2,px:true,
-    url:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/crystal/transparent-shiny/${id}.png`},
-  {id:"argent",label:"Argent",short:"Argent",color:"#A0A8C0",gen:2,px:true,
-    url:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/crystal/transparent-shiny/${id}.png`},
-  {id:"cristal",label:"Cristal",short:"Cristal",color:"#5EC8E8",gen:2,px:true,
     url:id=>`${PA}/versions/generation-ii/crystal/transparent-shiny/${id}.png`,
-    alt:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/crystal/shiny/${id}.png`},
+    alt:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/gold/shiny/${id}.png`},
+  {id:"argent",label:"Argent",short:"Argent",color:"#A0A8C0",gen:2,px:true,
+    url:id=>`${PA}/versions/generation-ii/crystal/transparent-shiny/${id}.png`,
+    alt:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/silver/shiny/${id}.png`},
+  {id:"cristal",label:"Cristal",short:"Cristal",color:"#5EC8E8",gen:2,px:true,
+    url:id=>{const n=dwName(id);if(!n)return null;const sub=id<=151?'1G':'2G';return`${DW}/2.1%20-%20Cristal/Statique/Shiny/${sub}/${n}.png`},
+    fb:id=>`${PA}/versions/generation-ii/crystal/shiny/${id}.png`},
 
   // Gen 3
   {id:"rubis",label:"Rubis",short:"Rubis",color:"#A41515",gen:3,px:true,
@@ -365,7 +368,13 @@ async function exportPNG(hunts,title,sub){
   const ln=c.createLinearGradient(CP,0,w-CP,0);ln.addColorStop(0,"transparent");ln.addColorStop(.3,"rgba(240,230,140,0.4)");ln.addColorStop(.5,"rgba(240,230,140,0.7)");ln.addColorStop(.7,"rgba(240,230,140,0.4)");ln.addColorStop(1,"transparent");
   c.strokeStyle=ln;c.lineWidth=1;c.beginPath();c.moveTo(CP+16,CP+32+oY);c.lineTo(w-CP-16,CP+32+oY);c.stroke();
 
-  const sprs=await Promise.all(hunts.map(async h=>{let img=await lI(h.spriteUrl);if(!img)img=await lI(h.fallbackUrl);if(!img)img=await lI(`${PA}/shiny/${h.pokemonId}.png`);return img}));
+  const sprs=await Promise.all(hunts.map(async h=>{
+    let img=await lI(h.spriteUrl);
+    if(!img){const a=altUrl(h.gameId,h.pokemonId,h.enName,h.speciesEn);if(a)img=await lI(a)}
+    if(!img)img=await lI(h.fallbackUrl);
+    if(!img)img=await lI(`${PA}/shiny/${h.pokemonId}.png`);
+    return img;
+  }));
   const gridY=CP+TH+sH;
 
   for(let i=0;i<hunts.length;i++){
@@ -570,9 +579,11 @@ function App(){
 
   function handleSpriteErr(e,h){
     const img=e.target;const a=altUrl(h.gameId,h.pokemonId,h.enName,h.speciesEn);const f=h.fallbackUrl;const u=`${PA}/shiny/${h.pokemonId}.png`;
-    if(a&&img.src!==a&&img.src!==f&&img.src!==u)img.src=a;
-    else if(f&&img.src!==f&&img.src!==u)img.src=f;
-    else if(img.src!==u)img.src=u;
+    let next=null;
+    if(a&&img.src!==a&&img.src!==f&&img.src!==u)next=a;
+    else if(f&&img.src!==f&&img.src!==u)next=f;
+    else if(img.src!==u)next=u;
+    if(next){img.src=next;updateHunt(h.id,{spriteUrl:next})}
   }
 
   /* ─── Export/Import JSON ─── */
