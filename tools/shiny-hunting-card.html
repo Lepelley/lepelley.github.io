@@ -117,13 +117,14 @@ const GAMES=[
   {id:"jaune",label:"Jaune",short:"Jaune",color:"#E8C520",gen:1,px:true,
     url:(_,n)=>`${SD}/gen1/${n}.png`,fb:id=>`${PA}/versions/generation-i/yellow/${id}.png`},
 
-  // Gen 2 — shiny, Showdown transparent
+  // Gen 2 — shiny, transparent
   {id:"or",label:"Or",short:"Or",color:"#DAA520",gen:2,px:true,
-    url:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/gold/shiny/${id}.png`},
+    url:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/crystal/transparent-shiny/${id}.png`},
   {id:"argent",label:"Argent",short:"Argent",color:"#A0A8C0",gen:2,px:true,
-    url:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/silver/shiny/${id}.png`},
+    url:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/crystal/transparent-shiny/${id}.png`},
   {id:"cristal",label:"Cristal",short:"Cristal",color:"#5EC8E8",gen:2,px:true,
-    url:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/crystal/shiny/${id}.png`},
+    url:id=>`${PA}/versions/generation-ii/crystal/transparent-shiny/${id}.png`,
+    alt:(_,n)=>`${SD}/gen2-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-ii/crystal/shiny/${id}.png`},
 
   // Gen 3
   {id:"rubis",label:"Rubis",short:"Rubis",color:"#A41515",gen:3,px:true,
@@ -283,11 +284,61 @@ async function getNames(pid){
   }catch{frC[pid]=frC[pid]||`#${pid}`;enC[pid]=enC[pid]||`${pid}`}
   return{fr:frC[pid],en:enC[pid]};
 }
-const SD_NAMES={"nidoran-f":"nidoranf","nidoran-m":"nidoranm","mr-mime":"mrmime","mime-jr":"mimejr","type-null":"typenull","ho-oh":"hooh","porygon-z":"porygonz","jangmo-o":"jangmoo","hakamo-o":"hakamoo","kommo-o":"kommoo","tapu-koko":"tapukoko","tapu-lele":"tapulele","tapu-bulu":"tapubulu","tapu-fini":"tapufini","chi-yu":"chiyu","chien-pao":"chienpao","ting-lu":"tinglu","wo-chien":"wochien","mr-rime":"mrrime","sirfetchd":"sirfetchd","mr-glaquette":"mrrime","great-tusk":"greattusk","scream-tail":"screamtail","brute-bonnet":"brutebonnet","flutter-mane":"fluttermane","slither-wing":"slitherwing","sandy-shocks":"sandyshocks","iron-treads":"irontreads","iron-bundle":"ironbundle","iron-hands":"ironhands","iron-jugulis":"ironjugulis","iron-moth":"ironmoth","iron-thorns":"ironthorns","roaring-moon":"roaringmoon","iron-valiant":"ironvaliant","walking-wake":"walkingwake","iron-leaves":"ironleaves","gouging-fire":"gougingfire","raging-bolt":"ragingbolt","iron-boulder":"ironboulder","iron-crown":"ironcrown"};
-function sdn(n){const l=(n||'').toLowerCase().replace(/[^a-z0-9\-]/g,'');return SD_NAMES[l]||l.replace(/-/g,'')}
-function sUrl(gid,pid,en){const g=GAMES.find(x=>x.id===gid);if(!g)return`${PA}/shiny/${pid}.png`;try{const u=g.url(pid,sdn(en));return u||g.fb(pid)}catch{return g.fb(pid)}}
+const SD_NAMES={"nidoran-f":"nidoranf","nidoran-m":"nidoranm","mr-mime":"mrmime","mime-jr":"mimejr","type-null":"typenull","ho-oh":"hooh","porygon-z":"porygonz","jangmo-o":"jangmoo","hakamo-o":"hakamoo","kommo-o":"kommoo","tapu-koko":"tapukoko","tapu-lele":"tapulele","tapu-bulu":"tapubulu","tapu-fini":"tapufini","chi-yu":"chiyu","chien-pao":"chienpao","ting-lu":"tinglu","wo-chien":"wochien","mr-rime":"mrrime","sirfetchd":"sirfetchd","great-tusk":"greattusk","scream-tail":"screamtail","brute-bonnet":"brutebonnet","flutter-mane":"fluttermane","slither-wing":"slitherwing","sandy-shocks":"sandyshocks","iron-treads":"irontreads","iron-bundle":"ironbundle","iron-hands":"ironhands","iron-jugulis":"ironjugulis","iron-moth":"ironmoth","iron-thorns":"ironthorns","roaring-moon":"roaringmoon","iron-valiant":"ironvaliant","walking-wake":"walkingwake","iron-leaves":"ironleaves","gouging-fire":"gougingfire","raging-bolt":"ragingbolt","iron-boulder":"ironboulder","iron-crown":"ironcrown"};
+function sdn(apiName,speciesName){
+  const full=(apiName||'').toLowerCase().replace(/[^a-z0-9\-]/g,'');
+  const sp=(speciesName||apiName||'').toLowerCase().replace(/[^a-z0-9\-]/g,'');
+  const base=SD_NAMES[sp]||sp.replace(/-/g,'');
+  if(full===sp)return base;
+  const suffix=full.slice(sp.length);
+  return base+suffix;
+}
+/* ─── Forms cache & fetcher ─── */
+const formsCache={};
+const FORM_LABELS={"exclamation":"!","question":"?","alola":"Alola","galar":"Galar","hisui":"Hisui","paldea":"Paldea","mega":"Méga","mega-x":"Méga X","mega-y":"Méga Y","gmax":"Gigamax","origin":"Origine","sky":"Ciel","land":"Terrestre","primal":"Primo","attack":"Attaque","defense":"Défense","speed":"Vitesse","plant":"Plante","sandy":"Sable","trash":"Déchet","heat":"Chaleur","wash":"Lavage","frost":"Froid","fan":"Hélice","mow":"Tonte","black":"Noir","white":"Blanc","therian":"Totémique","incarnate":"Avatar","ash":"Sacha","10":"10%","50":"50%","complete":"Parfait","dusk":"Crépusculaire","midnight":"Nocturne","midday":"Diurne","low-key":"Grave","amped":"Aigüe","ice":"Glace","noice":"Dégel","gulping":"Gobe","gorging":"Glouton","hangry":"Affamé","crowned":"Couronné","eternamax":"Infinimax","rapid-strike":"Mille Poings","single-strike":"Poing Final","bloodmoon":"Lune Vermeille"};
+async function fetchForms(speciesId){
+  if(formsCache[speciesId])return formsCache[speciesId];
+  try{
+    const r=await fetch(`https://pokeapi.co/api/v2/pokemon-species/${speciesId}`);
+    const d=await r.json();
+    const vars=d.varieties||[];
+    const specName=d.name;
+
+    // 1. Varieties (Alola, Galar, Mega, etc.)
+    const forms=vars.map(v=>{
+      const name=v.pokemon.name;
+      const pid=parseInt(v.pokemon.url.split('/').filter(Boolean).pop());
+      const suffix=name===specName?'':name.slice(specName.length+1);
+      let label=v.is_default?'Normal':(FORM_LABELS[suffix]||suffix.split('-').map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(' '));
+      return{apiName:name,pokemonId:pid,label,isDefault:v.is_default,speciesName:specName};
+    });
+
+    // 2. If only 1 variety, check pokemon endpoint for multi-forms (Zarbi, Vivillon, etc.)
+    if(vars.length===1){
+      const defaultPid=forms[0].pokemonId;
+      const r2=await fetch(`https://pokeapi.co/api/v2/pokemon/${defaultPid}`);
+      const d2=await r2.json();
+      const pForms=d2.forms||[];
+      if(pForms.length>1){
+        // Replace with form entries
+        const formEntries=pForms.map((f,i)=>{
+          const fname=f.name;
+          const suffix=fname===specName?'':fname.slice(specName.length+1);
+          let label=i===0?'Normal':(FORM_LABELS[suffix]||suffix.toUpperCase()||'Normal');
+          return{apiName:fname,pokemonId:defaultPid,label,isDefault:i===0,speciesName:specName};
+        });
+        formsCache[speciesId]=formEntries;
+        return formEntries;
+      }
+    }
+
+    formsCache[speciesId]=forms;
+    return forms;
+  }catch{return[]}
+}
+function sUrl(gid,pid,en,sp){const g=GAMES.find(x=>x.id===gid);if(!g)return`${PA}/shiny/${pid}.png`;try{const u=g.url(pid,sdn(en,sp));return u||g.fb(pid)}catch{return g.fb(pid)}}
 function fbUrl(gid,pid){const g=GAMES.find(x=>x.id===gid);return g?g.fb(pid):`${PA}/shiny/${pid}.png`}
-function altUrl(gid,pid,en){const g=GAMES.find(x=>x.id===gid);if(!g?.alt)return null;try{return g.alt(pid,sdn(en))}catch{return null}}
+function altUrl(gid,pid,en,sp){const g=GAMES.find(x=>x.id===gid);if(!g?.alt)return null;try{return g.alt(pid,sdn(en,sp))}catch{return null}}
 
 /* ─── Canvas ─── */
 const CW=120,CH=148,MC=8,CP=28,TH=56,GAP=10;
@@ -335,9 +386,12 @@ async function exportPNG(hunts,title,sub){
     c.fillText(dn,x+CW/2,y+82);
 
     // Game label
-    c.fillStyle=hu.found?"#666":"#333";c.font="9px 'Outfit',sans-serif";
-    const gl=(gm?.short||"").length>14?(gm?.short||"").slice(0,12)+"…":(gm?.short||"");
-    c.fillText(gl,x+CW/2,y+94);
+    const rawLabel=hu.displayLabel!=null?hu.displayLabel:(gm?.short||"");
+    if(rawLabel){
+      c.fillStyle=hu.found?"#666":"#333";c.font="9px 'Outfit',sans-serif";
+      const gl=rawLabel.length>14?rawLabel.slice(0,12)+"…":rawLabel;
+      c.fillText(gl,x+CW/2,y+94);
+    }
 
     if(hu.count){c.fillStyle=hu.found?"#F0E68C":"#555";c.font="bold 12px 'Outfit',sans-serif";c.fillText(hu.count,x+CW/2,y+110)}
   }
@@ -415,16 +469,41 @@ function App(){
   const [dexLd,setDexLd]=useState(false);const [dexPr,setDexPr]=useState({c:0,t:0});
 
   const [editCount,setEditCount]=useState("");const [editGame,setEditGame]=useState("");
+  // Form state
+  const [selSpecies,setSelSpecies]=useState(null); // {id,fr,en} of selected species for manual add
+  const [forms,setForms]=useState([]);
+  const [selForm,setSelForm]=useState(null);
+  const [formsLoading,setFormsLoading]=useState(false);
+  // Edit form state
+  const [editForms,setEditForms]=useState([]);
+  const [editSelForm,setEditSelForm]=useState(null);
+  const [editLabel,setEditLabel]=useState("");
   const editHunt=useMemo(()=>hunts.find(h=>h.id===editId),[hunts,editId]);
-  useEffect(()=>{if(editHunt){setEditCount(editHunt.count||"");setEditGame(editHunt.gameId)}},[editId]);
+  useEffect(()=>{if(editHunt){setEditCount(editHunt.count||"");setEditGame(editHunt.gameId);
+    const gObj=GAMES.find(x=>x.id===editHunt.gameId);
+    setEditLabel(editHunt.displayLabel!=null?editHunt.displayLabel:(gObj?.short||""));
+    // Fetch forms for edit
+    const sid=editHunt.speciesId||editHunt.pokemonId;
+    fetchForms(sid).then(f=>{setEditForms(f);const cur=f.find(x=>x.pokemonId===editHunt.pokemonId);setEditSelForm(cur||f[0]||null)});
+  }},[editId]);
 
   const updateHunt=(id,patch)=>setHunts(p=>p.map(h=>h.id===id?{...h,...patch}:h));
   const moveHunt=(id,dir)=>{setHunts(p=>{const i=p.findIndex(h=>h.id===id);if(i<0)return p;const j=i+dir;if(j<0||j>=p.length)return p;const n=[...p];[n[i],n[j]]=[n[j],n[i]];return n})};
 
   const addOne=useCallback(async()=>{
+    // If we have a species selected with forms, add with form data
+    if(selSpecies&&selForm){
+      const fr=selSpecies.fr;
+      const formLabel=selForm.isDefault?'':(' ('+selForm.label+')');
+      const displayName=fr+formLabel;
+      const pid=selForm.pokemonId;
+      const eName=selForm.apiName;
+      const sEn=selForm.speciesName;
+      setHunts(p=>[...p,{id:Date.now(),pokemonId:pid,name:displayName,enName:eName,speciesEn:sEn,speciesId:selSpecies.id,gameId:gm,count:cnt.trim()||null,spriteUrl:sUrl(gm,pid,eName,sEn),fallbackUrl:fbUrl(gm,pid),found:true}]);
+      setPk("");setCnt("");setSelSpecies(null);setForms([]);setSelForm(null);return;
+    }
     if(!pk.trim())return;
     const q=pk.trim().toLowerCase();
-    // Try local DB first
     const num=parseInt(q);
     let match=null;
     if(!isNaN(num)&&num>=1&&num<=PKMN_DB.length)match=PKMN_DB[num-1];
@@ -432,19 +511,18 @@ function App(){
     if(match){
       const [id,fr,en]=match;
       frC[id]=fr;enC[id]=en;
-      setHunts(p=>[...p,{id:Date.now(),pokemonId:id,name:fr,enName:en,gameId:gm,count:cnt.trim()||null,spriteUrl:sUrl(gm,id,en),fallbackUrl:fbUrl(gm,id),found:true}]);
+      setHunts(p=>[...p,{id:Date.now(),pokemonId:id,name:fr,enName:en,speciesEn:en,speciesId:id,gameId:gm,count:cnt.trim()||null,spriteUrl:sUrl(gm,id,en,en),fallbackUrl:fbUrl(gm,id),found:true}]);
       setPk("");setCnt("");return;
     }
-    // Fallback to API
     setLd(true);setErr("");
     try{
       const r=await fetch(`https://pokeapi.co/api/v2/pokemon/${q.replace(/\s+/g,"-")}`);
       if(!r.ok)throw 0;const d=await r.json();const id=d.id;const nm=await getNames(id);
-      setHunts(p=>[...p,{id:Date.now(),pokemonId:id,name:nm.fr,enName:nm.en,gameId:gm,count:cnt.trim()||null,spriteUrl:sUrl(gm,id,nm.en),fallbackUrl:fbUrl(gm,id),found:true}]);
+      setHunts(p=>[...p,{id:Date.now(),pokemonId:id,name:nm.fr,enName:nm.en,speciesEn:nm.en,speciesId:id,gameId:gm,count:cnt.trim()||null,spriteUrl:sUrl(gm,id,nm.en,nm.en),fallbackUrl:fbUrl(gm,id),found:true}]);
       setPk("");setCnt("");
     }catch{setErr("Pokémon introuvable.")}
     setLd(false);
-  },[pk,gm,cnt]);
+  },[pk,gm,cnt,selSpecies,selForm]);
 
   async function buildH(ids,gameId,onP){
     const out=[];const B=50;
@@ -456,7 +534,7 @@ function App(){
         let fr,en;
         if(local&&local[0]===id){fr=local[1];en=local[2];frC[id]=fr;enC[id]=en;}
         else{const nm=await getNames(id);fr=nm.fr;en=nm.en;}
-        out.push({id:Date.now()+id+Math.random()*9999,pokemonId:id,name:fr,enName:en,gameId,count:null,spriteUrl:sUrl(gameId,id,en),fallbackUrl:fbUrl(gameId,id),found:false});
+        out.push({id:Date.now()+id+Math.random()*9999,pokemonId:id,name:fr,enName:en,speciesEn:en,speciesId:id,gameId,count:null,spriteUrl:sUrl(gameId,id,en,en),fallbackUrl:fbUrl(gameId,id),found:false});
       }
       if(onP)onP(Math.min(i+B,ids.length),ids.length);
       // Small yield to UI
@@ -490,7 +568,7 @@ function App(){
   useEffect(()=>{const d=REGIONAL_DEXES.find(x=>x.id===dexId);if(d)setDexG(d.dg)},[dexId]);
 
   function handleSpriteErr(e,h){
-    const img=e.target;const a=altUrl(h.gameId,h.pokemonId,h.enName);const f=h.fallbackUrl;const u=`${PA}/shiny/${h.pokemonId}.png`;
+    const img=e.target;const a=altUrl(h.gameId,h.pokemonId,h.enName,h.speciesEn);const f=h.fallbackUrl;const u=`${PA}/shiny/${h.pokemonId}.png`;
     if(a&&img.src!==a&&img.src!==f&&img.src!==u)img.src=a;
     else if(f&&img.src!==f&&img.src!==u)img.src=f;
     else if(img.src!==u)img.src=u;
@@ -498,7 +576,7 @@ function App(){
 
   /* ─── Export/Import JSON ─── */
   function exportJSON(){
-    const data={version:2,title,sub,hunts:hunts.map(h=>({pokemonId:h.pokemonId,name:h.name,enName:h.enName,gameId:h.gameId,count:h.count,found:h.found}))};
+    const data={version:2,title,sub,hunts:hunts.map(h=>({pokemonId:h.pokemonId,name:h.name,enName:h.enName,speciesEn:h.speciesEn||h.enName,speciesId:h.speciesId||h.pokemonId,gameId:h.gameId,count:h.count,found:h.found,displayLabel:h.displayLabel!=null?h.displayLabel:undefined}))};
     const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="shiny-card.json";a.click();URL.revokeObjectURL(a.href);
   }
@@ -515,8 +593,8 @@ function App(){
           if(data.sub)setSub(data.sub);
           if(data.hunts){
             setHunts(data.hunts.map((h,i)=>({
-              ...h,id:Date.now()+i+Math.random()*9999,
-              spriteUrl:sUrl(h.gameId,h.pokemonId,h.enName),
+              ...h,speciesEn:h.speciesEn||h.enName,speciesId:h.speciesId||h.pokemonId,id:Date.now()+i+Math.random()*9999,
+              spriteUrl:sUrl(h.gameId,h.pokemonId,h.enName,h.speciesEn||h.enName),
               fallbackUrl:fbUrl(h.gameId,h.pokemonId),
               found:h.found??false
             })));
@@ -550,10 +628,22 @@ function App(){
 
   const handleSelect=useCallback(p=>{
     const [id,fr,en]=p;
-    setPk(fr);
-    // Auto-add immediately
-    setHunts(prev=>[...prev,{id:Date.now(),pokemonId:id,name:fr,enName:en,gameId:gm,count:cnt.trim()||null,spriteUrl:sUrl(gm,id,en),fallbackUrl:fbUrl(gm,id),found:true}]);
-    setPk("");setCnt("");
+    setPk(fr);setSelSpecies({id,fr,en});setSelForm(null);setForms([]);
+    setFormsLoading(true);
+    fetchForms(id).then(f=>{
+      setForms(f);
+      const def=f.find(x=>x.isDefault)||f[0];
+      setSelForm(def||null);
+      setFormsLoading(false);
+      // Auto-add if only 1 form (no choice needed)
+      if(f.length<=1){
+        const pid=def?def.pokemonId:id;
+        const eName=def?def.apiName:en;
+        const sEn=def?def.speciesName:en;
+        setHunts(prev=>[...prev,{id:Date.now(),pokemonId:pid,name:fr,enName:eName,speciesEn:sEn,speciesId:id,gameId:gm,count:cnt.trim()||null,spriteUrl:sUrl(gm,pid,eName,sEn),fallbackUrl:fbUrl(gm,pid),found:true}]);
+        setPk("");setCnt("");setSelSpecies(null);setForms([]);setSelForm(null);
+      }
+    });
   },[gm,cnt]);
 
   const cols=Math.min(hunts.length,MC);
@@ -602,6 +692,16 @@ function App(){
               <span className="form-label">Jeu</span>
               <GS value={gm} onChange={e=>setGm(e.target.value)} />
             </div>
+            {forms.length>1&&(
+              <div className="form-group">
+                <span className="form-label">Forme</span>
+                <select value={selForm?.apiName||''} onChange={e=>{const f=forms.find(x=>x.apiName===e.target.value);setSelForm(f)}}
+                  style={{minWidth:120}}>
+                  {forms.map(f=><option key={f.apiName} value={f.apiName}>{f.label}</option>)}
+                </select>
+              </div>
+            )}
+            {formsLoading&&<div style={{alignSelf:"center",fontSize:12,color:"var(--text-dim)"}}>Chargement formes…</div>}
             <div className="form-group">
               <span className="form-label">Rencontres</span>
               <input value={cnt} onChange={e=>setCnt(e.target.value)} placeholder="—" style={{width:100,textAlign:"center",color:"var(--gold-light)"}} />
@@ -676,12 +776,28 @@ function App(){
               <span className="form-label">Jeu / Sprite</span>
               <GS value={editGame} onChange={e=>setEditGame(e.target.value)} />
             </div>
+            {editForms.length>1&&(
+              <div className="form-group">
+                <span className="form-label">Forme</span>
+                <select value={editSelForm?.apiName||''} onChange={e=>{const f=editForms.find(x=>x.apiName===e.target.value);setEditSelForm(f)}}
+                  style={{minWidth:120}}>
+                  {editForms.map(f=><option key={f.apiName} value={f.apiName}>{f.label}</option>)}
+                </select>
+              </div>
+            )}
             <div className="form-group">
               <span className="form-label">Rencontres</span>
               <input value={editCount} onChange={e=>setEditCount(e.target.value)} placeholder="—" style={{width:100,textAlign:"center",color:"var(--gold-light)"}} />
             </div>
+            <div className="form-group">
+              <span className="form-label">Version affichée</span>
+              <input value={editLabel} onChange={e=>setEditLabel(e.target.value)} placeholder="vide = masqué" style={{width:120}} />
+            </div>
             <button className="btn btn-gold btn-sm" style={{height:42}} onClick={()=>{
-              updateHunt(editId,{gameId:editGame,spriteUrl:sUrl(editGame,editHunt.pokemonId,editHunt.enName),fallbackUrl:fbUrl(editGame,editHunt.pokemonId),count:editCount.trim()||null});
+              const ef=editSelForm;const pid=ef?ef.pokemonId:editHunt.pokemonId;const eName=ef?ef.apiName:editHunt.enName;const sEn=ef?ef.speciesName:editHunt.speciesEn;
+              const formLabel=ef&&!ef.isDefault?' ('+ef.label+')':'';
+              const baseName=(editHunt.name||'').replace(/\s*\(.*\)$/,'');
+              updateHunt(editId,{pokemonId:pid,enName:eName,speciesEn:sEn,name:baseName+formLabel,gameId:editGame,displayLabel:editLabel,spriteUrl:sUrl(editGame,pid,eName,sEn),fallbackUrl:fbUrl(editGame,pid),count:editCount.trim()||null});
             }}>Appliquer</button>
           </div>
           <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
@@ -713,7 +829,7 @@ function App(){
                   </button>
                   <img src={h.spriteUrl} alt={h.name} className={g?.px?"pixelated":""} onError={e=>handleSpriteErr(e,h)} />
                   <div className="poke-name">{h.name}</div>
-                  <div className="poke-game">{g?.short||""}</div>
+                  <div className="poke-game">{h.displayLabel!=null?h.displayLabel:(g?.short||"")}</div>
                   {h.count&&<div className="poke-count">{h.count}</div>}
                 </div>
               )})}
