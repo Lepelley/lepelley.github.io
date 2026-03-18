@@ -102,7 +102,8 @@ const SD="https://play.pokemonshowdown.com/sprites";
 
 /* ═══════════════ GAMES — one per individual title ═══════════════ */
 const DW="https://raw.githubusercontent.com/DewiLet/Sprites/main";
-function dwName(id){const p=PKMN_DB[id-1];return p?`${String(id).padStart(3,'0')}_${p[1]}`:null}
+function stripAccents(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[♀♂]/g,'')}
+function dwName(id){const p=PKMN_DB[id-1];return p?`${String(id).padStart(3,'0')}_${stripAccents(p[1])}`:null}
 
 const GAMES=[
   // Gen 1 — no shiny, transparent sprites
@@ -139,10 +140,10 @@ const GAMES=[
   {id:"vert-feuille",label:"Vert Feuille",short:"Vert Feuille",color:"#40A840",gen:3,px:true,
     url:id=>`${PA}/versions/generation-iii/firered-leafgreen/shiny/${id}.png`,fb:id=>`${PA}/versions/generation-iii/ruby-sapphire/shiny/${id}.png`},
   {id:"colosseum",label:"Colosseum",short:"Colosseum",color:"#6050A0",gen:3,px:false,
-    url:id=>{const n=dwName(id);return n?`${DW}/Colosseum%26XD/${encodeURIComponent(n)}.gif`:null},
+    url:id=>{const n=dwName(id);return n?`${DW}/Colosseum%26XD/Shiny/${n}.gif`:null},
     alt:(_,n)=>`${SD}/gen3-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-iii/ruby-sapphire/shiny/${id}.png`},
   {id:"xd",label:"XD",short:"XD",color:"#483878",gen:3,px:false,
-    url:id=>{const n=dwName(id);return n?`${DW}/Colosseum%26XD/${encodeURIComponent(n)}.gif`:null},
+    url:id=>{const n=dwName(id);return n?`${DW}/Colosseum%26XD/Shiny/${n}.gif`:null},
     alt:(_,n)=>`${SD}/gen3-shiny/${n}.png`,fb:id=>`${PA}/versions/generation-iii/ruby-sapphire/shiny/${id}.png`},
 
   // Gen 4
