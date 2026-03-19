@@ -298,17 +298,69 @@ async function getNames(pid){
 }
 /* ─── Balls ─── */
 const BALLS={
-  "":"","Poké Ball":"poke-ball","Super Ball":"great-ball","Hyper Ball":"ultra-ball","Master Ball":"master-ball",
-  "Honor Ball":"premier-ball","Luxe Ball":"luxury-ball","Sombre Ball":"dusk-ball","Rapide Ball":"quick-ball",
-  "Faiblo Ball":"timer-ball","Soin Ball":"heal-ball","Filet Ball":"net-ball","Scuba Ball":"dive-ball",
-  "Chrono Ball":"timer-ball","Lune Ball":"moon-ball","Love Ball":"love-ball","Niveau Ball":"level-ball",
-  "Speed Ball":"fast-ball","Safari Ball":"safari-ball","Mémoire Ball":"cherish-ball","Bis Ball":"repeat-ball",
-  "Masse Ball":"heavy-ball","Appât Ball":"lure-ball","Copain Ball":"friend-ball","Rêve Ball":"dream-ball",
-  "Compét Ball":"sport-ball","Parc Ball":"park-ball","Ultra Ball":"ultra-ball","Saphir Ball":"beast-ball",
-  "Étrange Ball":"strange-ball","Turbo Ball":"turbo-ball","Wing Ball":"wing-ball",
+  "":"",
+  // Standard
+  "Poké Ball":"poke-ball","Super Ball":"great-ball","Hyper Ball":"ultra-ball","Master Ball":"master-ball",
+  // Apricorn / Johto
+  "Lune Ball":"moon-ball","Love Ball":"love-ball","Niveau Ball":"level-ball","Speed Ball":"fast-ball",
+  "Masse Ball":"heavy-ball","Appât Ball":"lure-ball","Copain Ball":"friend-ball",
+  // Gen 3-4
+  "Honor Ball":"premier-ball","Luxe Ball":"luxury-ball","Filet Ball":"net-ball","Scuba Ball":"dive-ball",
+  "Chrono Ball":"timer-ball","Faiblo Ball":"nest-ball","Bis Ball":"repeat-ball","Safari Ball":"safari-ball",
+  "Soin Ball":"heal-ball","Sombre Ball":"dusk-ball","Rapide Ball":"quick-ball",
+  // Gen 5+
+  "Rêve Ball":"dream-ball","Compét' Ball":"sport-ball","Compét Ball":"sport-ball",
+  "Mémoire Ball":"cherish-ball","Parc Ball":"park-ball",
+  // Gen 7
+  "Ultra Ball":"beast-ball",
+  // Gen 8 Hisui / LA
+  "Poké Ball d'Hisui":"lapoke-ball","Super Ball d'Hisui":"lagreat-ball","Hyper Ball d'Hisui":"laultra-ball",
+  "Masse Ball d'Hisui":"laheavy-ball",
+  "Mégamasse Ball":"laleaden-ball","Gigamasse Ball":"lagigaton-ball",
+  "Plume Ball":"lafeather-ball","Envol Ball":"lawing-ball",
+  "Propulse Ball":"lajet-ball",
+  "Origine Ball":"laorigin-ball",
+  // Gen 8 / 9
+  "Étrange Ball":"lastrange-ball",
+  // Aliases CSV import
+  "Pokeball":"poke-ball","Pokéball":"poke-ball","Poke Ball":"poke-ball",
+  "Great Ball":"great-ball","Ultra Ball (EN)":"ultra-ball",
+  "Premier Ball":"premier-ball","Luxury Ball":"luxury-ball",
+  "Timer Ball":"timer-ball","Repeat Ball":"repeat-ball",
+  "Net Ball":"net-ball","Dive Ball":"dive-ball","Nest Ball":"nest-ball",
+  "Heal Ball":"heal-ball","Dusk Ball":"dusk-ball","Quick Ball":"quick-ball",
+  "Moon Ball":"moon-ball","Level Ball":"level-ball",
+  "Fast Ball":"fast-ball","Heavy Ball":"heavy-ball","Lure Ball":"lure-ball",
+  "Friend Ball":"friend-ball","Dream Ball":"dream-ball","Sport Ball":"sport-ball",
+  "Beast Ball":"beast-ball","Cherish Ball":"cherish-ball",
+  "Park Ball":"park-ball",
+  "Feather Ball":"lafeather-ball","Wing Ball":"lawing-ball","Jet Ball":"lajet-ball",
+  "Leaden Ball":"laleaden-ball","Gigaton Ball":"lagigaton-ball","Origin Ball":"laorigin-ball",
+  "Strange Ball":"lastrange-ball",
+  // Vieil aliases
+  "Saphir Ball":"beast-ball","Turbo Ball":"lajet-ball","Histo Ball":"laorigin-ball",
+  "Poids Ball":"laleaden-ball","Mégasse Ball":"lagigaton-ball","Aile Ball":"lawing-ball",
 };
-const BALL_LIST=Object.keys(BALLS).filter(b=>b);
-function ballSpriteUrl(frName){const en=BALLS[frName];return en?`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${en}.png`:null}
+const PA_ITEMS="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items";
+const DW_BALLS=`${DW}/Ball`;
+const BALL_LIST=[
+  "Poké Ball","Super Ball","Hyper Ball","Master Ball",
+  "Honor Ball","Luxe Ball","Sombre Ball","Rapide Ball","Soin Ball",
+  "Chrono Ball","Faiblo Ball","Filet Ball","Scuba Ball","Bis Ball",
+  "Lune Ball","Love Ball","Niveau Ball","Speed Ball",
+  "Masse Ball","Appât Ball","Copain Ball",
+  "Safari Ball","Compét Ball","Mémoire Ball",
+  "Rêve Ball","Ultra Ball",
+  "Poké Ball d'Hisui","Super Ball d'Hisui","Hyper Ball d'Hisui",
+  "Masse Ball d'Hisui","Mégamasse Ball","Gigamasse Ball",
+  "Plume Ball","Envol Ball","Propulse Ball","Origine Ball",
+  "Étrange Ball","Parc Ball",
+];
+function ballSpriteUrl(frName){
+  const en=BALLS[frName];
+  if(!en)return null;
+  return`${PA_ITEMS}/${en}.png`;
+}
 
 /* ─── CSV Import: French game name -> game ID mapping ─── */
 const GAME_NAME_MAP={
@@ -375,7 +427,13 @@ function parseCSV(text){
     const [pid,fr,en]=match;
     // Resolve game
     const gameId=GAME_NAME_MAP[gameFr]||'home';
-    results.push({pokemonId:pid,name:fr,enName:en,speciesEn:en,speciesId:pid,gameId,count,ball:ballFr||null,found:true});
+    // Convert balls to Hisui variants for Légendes Arceus
+    let ball=ballFr||null;
+    if(ball&&gameId==='arceus'){
+      const HISUI_BALL_MAP={"Poké Ball":"Poké Ball d'Hisui","Super Ball":"Super Ball d'Hisui","Hyper Ball":"Hyper Ball d'Hisui","Masse Ball":"Masse Ball d'Hisui"};
+      ball=HISUI_BALL_MAP[ball]||ball;
+    }
+    results.push({pokemonId:pid,name:fr,enName:en,speciesEn:en,speciesId:pid,gameId,count,ball,found:true});
   }
   return results;
 }
@@ -777,7 +835,7 @@ function App(){
         <div className="io-row">
           <button className="btn btn-outline btn-sm" onClick={exportJSON} disabled={!hunts.length}>💾 Sauvegarder (.json)</button>
           <button className="btn btn-outline btn-sm" onClick={importJSON}>📂 Charger (.json)</button>
-          <button className="btn btn-outline btn-sm" onClick={()=>document.getElementById('import-csv').click()}>📋 Importer CSV PE</button>
+          <button className="btn btn-outline btn-sm" onClick={()=>document.getElementById('import-csv').click()}>📋 Charger PE (.csv)</button>
           <button className="btn btn-outline btn-sm" onClick={()=>document.getElementById('import-css').click()}>🎨 Importer CSS</button>
           <button className="btn btn-outline btn-sm" onClick={()=>setShowCSS(!showCSS)}>{showCSS?"Masquer CSS":"✏ Éditer CSS"}</button>
           {customCSS&&<button className="btn btn-outline btn-sm" style={{color:"var(--danger)"}} onClick={()=>setCustomCSS("")}>✕ Reset CSS</button>}
