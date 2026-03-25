@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    margin: 0;
+    background: transparent;
+    font-family: Arial, sans-serif;
+    font-size: 48px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  }
+</style>
+</head>
+<body>
+  <div id="valeur">Chargement...</div>
+  <script>
+    const queryString = window.location.search
+    const urlParams = new URLSearchParams(queryString)
+    const id = urlParams.get('sheet_id');
+    const sheet = urlParams.get('sheet');
+    const cell = urlParams.get('cell');
+
+    async function update() {
+      try {
+        const url = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${sheet}&range=${cell}`;
+        const res = await fetch(url);
+        const text = await res.text();
+        // Enlever les guillemets du CSV
+        const valeur = text.trim().replace(/^"|"$/g, '');
+        document.getElementById('valeur').textContent = valeur;
+      } catch (e) {
+        document.getElementById('valeur').textContent = 'Erreur';
+      }
+    }
+
+    // Rafraîchir toutes les 5 secondes
+    update();
+    setInterval(update, 5000);
+  </script>
+</body>
+</html>
