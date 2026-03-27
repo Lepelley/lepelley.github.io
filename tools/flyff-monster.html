@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flyff Universe Monsters</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/bootstrap-table.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/bootstrap-table.min.js"></script>
+</head>
+<body class="container mt-4">
+    <h1>Flyff Universe Monsters</h1>
+    
+    <div id="loading" class="alert alert-info">
+        <strong>Chargement...</strong>
+        <div class="progress mt-2">
+            <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+        </div>
+        <div id="progressText" class="mt-2"></div>
+    </div>
+
+    <div id="error" class="alert alert-danger" style="display: none;">
+        <strong>Erreur!</strong> <span id="errorText"></span>
+        <br><button class="btn btn-sm btn-primary mt-2" onclick="location.reload()">Réessayer</button>
+    </div>
+    
+    <div id="content" style="display: none;">
+        <div class="alert alert-info">
+            <strong>Cache:</strong> <span id="cacheInfo"></span>
+            <button class="btn btn-sm btn-primary" onclick="refreshData()">Actualiser les données</button>
+        </div>
+        
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <label for="levelInput" class="form-label"><strong>Votre niveau:</strong></label>
+                    </div>
+                    <div class="col-auto">
+                        <input type="number" class="form-control" id="levelInput" 
+                               placeholder="Entrez votre niveau" min="1" max="190">
+                    </div>
+                    <div class="col-auto">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterCheck" checked>
+                            <label class="form-check-label" for="filterCheck">
+                                Filtrer les boss/instances
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary" onclick="calculateEfficiency()">Calculer</button>
+                        <button class="btn btn-secondary" onclick="clearLevel()">Réinitialiser</button>
+                    </div>
+                    <div class="col-12" id="levelInfo" style="display: none;">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> 
+                            <span id="levelInfoText"></span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <table id="monsterTable" 
+               class="table table-striped table-sm table-hover"
+               data-toggle="table"
+               data-sort-name="level"
+               data-sort-order="asc">
+            <thead class="table-dark">
+            <tr>
+                <th data-field="name" data-sortable="true">Nom</th>
+                <th data-field="level" data-sortable="true">Niveau</th>
+                <th data-field="health" data-sortable="true">PV</th>
+                <th data-field="exp" data-sortable="true">EXP %</th>
+                <th data-field="efficiency" data-sortable="true">Efficacité</th>
+            </tr>
+            </thead>
+            <tbody id="monsterTableBody">
+            </tbody>
+        </table>
+        
+        <div class="alert alert-secondary mt-3">
+            <strong>Affichage:</strong> <span id="displayCount">0</span> / <span id="totalCount">0</span> monstres
+            <br><small class="text-muted" id="efficiencyNote" style="display: none;">
+                Efficacité = (EXP% / PV) × Pénalité de niveau × 1,000,000 (plus élevé = meilleur)
+            </small>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CACHE_DURATION = 3600 * 1000 * 10; // 10 heures
+        const CORS_PROXIES = [
+            { name: 'direct',       format: (url) => url },
+            { name: 'allorigins',   format: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` },
+            { name: 'corsproxy.io', format: (url) => `https://corsproxy.io/?${encodeURIComponent(url)}` },
+        ];
+        let workingProxy = null;
+        const API_BASE = 'https://api.flyff.com/monster';
+        const BATCH_SIZE = 3;
+        const BATCH_DELAY = 150;
+
+        let monstersData = [];
+        let currentLevel = -1;
+        let filterEnabled = true;
+        let db;
+
+        // Initialiser IndexedDB
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('FlyffMonstersDB', 1);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('monsters')) {
+                        db.createObjectStore('monsters', { keyPath: 'key' });
+                    }
+                };
+            });
+        }
+
+        // Sauvegarder dans IndexedDB
+        async function saveToCache(data) {
+            const transaction = db.transaction(['monsters'], 'readwrite');
+            const store = transaction.objectStore('monsters');
+            
+            await store.put({ key: 'monstersData', value: data, timestamp: Date.now() });
+            
+            return new Promise((resolve, reject) => {
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = () => reject(transaction.error);
+            });
+        }
+
+        // Récupérer depuis IndexedDB
+        async function getFromCache() {
+            const transaction = db.transaction(['monsters'], 'readonly');
+            const store = transaction.objectStore('monsters');
+            const request = store.get('monstersData');
+            
+            return new Promise((resolve, reject) => {
+                request.onsuccess = () => {
+                    const result = request.result;
+                    if (result && (Date.now() - result.timestamp) < CACHE_DURATION) {
+                        resolve(result.value);
+                    } else {
+                        resolve(null);
+                    }
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Vider le cache
+        async function clearCache() {
+            const transaction = db.transaction(['monsters'], 'readwrite');
+            const store = transaction.objectStore('monsters');
+            await store.clear();
+            
+            return new Promise((resolve, reject) => {
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = () => reject(transaction.error);
+            });
+        }
+
+        function showError(message, details) {
+            console.error(message, details);
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorText').innerHTML = message + 
+                (details ? '<br><small>' + details + '</small>' : '');
+        }
+
+        async function loadData() {
+            try {
+                await initDB();
+                
+                const cached = await getFromCache();
+                if (cached) {
+                    monstersData = cached;
+                    updateCacheInfo(new Date());
+                    displayMonsters();
+                    return;
+                }
+
+                await fetchMonsters();
+            } catch (error) {
+                console.error('Erreur IndexedDB:', error);
+                showError('Erreur lors de l\'initialisation de la base de données', error.message);
+            }
+        }
+
+        async function proxyFetch(url) {
+            // Si on a déjà trouvé un proxy qui marche, l'utiliser en premier
+            if (workingProxy) {
+                try {
+                    const resp = await fetch(workingProxy.format(url));
+                    if (resp.ok) return resp;
+                } catch (e) { /* on continue */ }
+                workingProxy = null;
+            }
+            // Essayer tous les proxies
+            for (const proxy of CORS_PROXIES) {
+                try {
+                    const resp = await fetch(proxy.format(url));
+                    if (resp.ok) {
+                        workingProxy = proxy;
+                        console.log('Proxy fonctionnel:', proxy.name);
+                        return resp;
+                    }
+                } catch (e) {
+                    console.warn(`Proxy ${proxy.name} échoué:`, e.message);
+                }
+            }
+            throw new Error('Aucun proxy CORS disponible');
+        }
+
+        async function fetchMonsters() {
+            try {
+                document.getElementById('progressText').textContent = 'Connexion à l\'API...';
+                
+                const idsResponse = await proxyFetch(API_BASE);
+                const monsterIds = await idsResponse.json();
+                
+                if (!Array.isArray(monsterIds) || monsterIds.length === 0) {
+                    throw new Error('Aucun monstre trouvé dans la réponse de l\'API');
+                }
+                
+                document.getElementById('progressText').textContent = `Chargement de ${monsterIds.length} monstres...`;
+                
+                monstersData = [];
+                const batches = [];
+                
+                for (let i = 0; i < monsterIds.length; i += BATCH_SIZE) {
+                    batches.push(monsterIds.slice(i, i + BATCH_SIZE));
+                }
+                
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (let i = 0; i < batches.length; i++) {
+                    const batch = batches[i];
+                    const ids = batch.join(',');
+                    
+                    try {
+                        const url = `${API_BASE}/${ids}`;
+                        const response = await proxyFetch(url);
+                        
+                        const data = await response.json();
+                        
+                        if (Array.isArray(data)) {
+                            monstersData.push(...data);
+                            successCount++;
+                        } else {
+                            console.warn(`Données invalides pour le lot ${i}`);
+                            errorCount++;
+                        }
+                        
+                        const progress = ((i + 1) / batches.length) * 100;
+                        document.getElementById('progressBar').style.width = progress + '%';
+                        document.getElementById('progressText').textContent = 
+                            `Chargé ${monstersData.length} / ${monsterIds.length} monstres (${Math.round(progress)}%)`;
+                        
+                        if (i < batches.length - 1) {
+                            await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+                        }
+                    } catch (error) {
+                        console.error(`Erreur lors du chargement du lot ${i}:`, error);
+                        errorCount++;
+                    }
+                }
+                
+                if (monstersData.length === 0) {
+                    throw new Error(`Aucun monstre chargé (${errorCount} erreurs sur ${batches.length} lots)`);
+                }
+                
+                await saveToCache(monstersData);
+                
+                updateCacheInfo(new Date());
+                displayMonsters();
+                
+                if (errorCount > 0) {
+                    console.warn(`${errorCount} lots ont échoué sur ${batches.length} total`);
+                }
+                
+            } catch (error) {
+                showError('Erreur lors du chargement des données', error.message);
+            }
+        }
+
+        function displayMonsters() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+            
+            let displayCount = 0;
+            const levelDiff = [1, 1, 0.98, 0.96, 0.92, 0.88, 0.82, 0.76, 0.68, 0.59, 0.51, 0.42, 0.32, 0.22, 0.12, 0.01];
+            
+            const tableData = [];
+            
+            monstersData.forEach(monster => {
+                if (filterEnabled && monster.rank && ['violet', 'giant', 'super', 'boss'].includes(monster.rank)) return;
+                if (filterEnabled && monster.area && monster.area === 'instance') return;
+                
+                if (currentLevel !== -1) {
+                    const diff = monster.level - currentLevel;
+                    if (diff > 15 || diff < -1) return;
+                }
+                
+                displayCount++;
+                
+                let exp = 0;
+                if (currentLevel !== -1 && monster.experienceTable && monster.experienceTable[currentLevel - 1]) {
+                    exp = monster.experienceTable[currentLevel - 1];
+                } else if (monster.experienceTable && monster.experienceTable[monster.level - 1]) {
+                    exp = monster.experienceTable[monster.level - 1];
+                }
+                
+                let efficiency = 0;
+                if (currentLevel !== -1 && monster.hp > 0) {
+                    const levelMobDiff = currentLevel > monster.level ? 0 : Math.min(15, monster.level - currentLevel);
+                    const modifier = levelDiff[levelMobDiff];
+                    efficiency = (exp / monster.hp) * modifier * 1000000;
+                }
+                
+                tableData.push({
+                    name: `<a href="https://flyffipedia.com/monsters/details/${monster.id}" target="_blank">${monster.name?.en || 'Unknown'}</a>`,
+                    level: monster.level || 0,
+                    health: monster.hp ? monster.hp.toLocaleString() : '',
+                    exp: exp > 0 ? exp + ' %' : '',
+                    efficiency: currentLevel !== -1 ? efficiency.toFixed(2) : '-',
+                    _efficiencySort: efficiency
+                });
+            });
+            
+            document.getElementById('displayCount').textContent = displayCount;
+            document.getElementById('totalCount').textContent = monstersData.length;
+            
+            $('#monsterTable').bootstrapTable('destroy');
+            $('#monsterTable').bootstrapTable({
+                data: tableData,
+                sortName: currentLevel !== -1 ? 'efficiency' : 'level',
+                sortOrder: currentLevel !== -1 ? 'desc' : 'asc'
+            });
+        }
+
+        function calculateEfficiency() {
+            const levelInput = document.getElementById('levelInput');
+            currentLevel = parseInt(levelInput.value) || -1;
+            filterEnabled = document.getElementById('filterCheck').checked;
+            
+            if (currentLevel !== -1) {
+                document.getElementById('levelInfo').style.display = 'block';
+                document.getElementById('levelInfoText').textContent = 
+                    `Affichage des monstres pour le niveau ${currentLevel} (niveau ${Math.max(1, currentLevel - 1)} à ${currentLevel + 15})`;
+                document.getElementById('efficiencyNote').style.display = 'block';
+            } else {
+                document.getElementById('levelInfo').style.display = 'none';
+                document.getElementById('efficiencyNote').style.display = 'none';
+            }
+            
+            displayMonsters();
+        }
+
+        function clearLevel() {
+            document.getElementById('levelInput').value = '';
+            currentLevel = -1;
+            document.getElementById('levelInfo').style.display = 'none';
+            document.getElementById('efficiencyNote').style.display = 'none';
+            displayMonsters();
+        }
+
+        async function refreshData() {
+            await clearCache();
+            location.reload();
+        }
+
+        function updateCacheInfo(date) {
+            const proxyInfo = workingProxy ? ` via ${workingProxy.name}` : '';
+            document.getElementById('cacheInfo').textContent = 
+                `Dernière mise à jour ${date.toLocaleString('fr-FR')} (${monstersData.length} monstres${proxyInfo})`;
+        }
+
+        window.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>
